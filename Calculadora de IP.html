@@ -1,0 +1,154 @@
+<html>
+<head>
+<title>Calculo de Rango de IP</title>
+<script>
+
+// Función para convertir la dirección IP en formato decimal (base 10)
+// Toma una dirección IP como cadena de texto y la convierte a un valor numérico
+function getIPbase10(IPv4) {
+    const octetos = IPv4.split('.'); // Se divide la dirección IP en sus 4 octetos
+    return ((parseInt(octetos[0]) << 24) >>> 0) +  // Desplaza el primer octeto a la posición más alta
+           (parseInt(octetos[1]) << 16) +  // Desplaza el segundo octeto
+           (parseInt(octetos[2]) << 8) +   // Desplaza el tercer octeto
+           parseInt(octetos[3]);  // El último octeto se mantiene en su lugar
+}
+
+// Función para calcular el NetID (ID de la red)
+// Recibe la dirección IP y el número de bits de la máscara
+function getNetID(IPv4, bitsMascara) {
+    const ipNum = getIPbase10(IPv4);  // Convierte la IP a formato numérico
+    const mascara = ((1 << bitsMascara) - 1) << (32 - bitsMascara);  // Calcula la máscara de red en formato numérico
+    const netID = ipNum & mascara;  // Realiza una operación AND entre la IP y la máscara para obtener el NetID
+    // Devuelve el NetID en formato IPv4
+    return [
+        (netID >>> 24) & 255,
+        (netID >>> 16) & 255,
+        (netID >>> 8) & 255,
+        netID & 255
+    ].join('.');
+}
+
+// Función para determinar la clase de una dirección IP
+function getClase(IPv4) {
+    const primerOcteto = parseInt(IPv4.split('.')[0]);  // Obtiene el primer octeto de la dirección IP
+    if (primerOcteto < 128) return "Clase A";  
+    if (primerOcteto < 192) return "Clase B";  
+    if (primerOcteto < 224) return "Clase C";  
+    if (primerOcteto < 240) return "Clase D";  
+    return "Clase E";  
+}
+
+// Función para calcular el rango de direcciones IP disponibles en una subred
+// Calcula la IP mínima y máxima de la subred según la máscara de subred
+function getRangoIP(IPv4, bitsMascara) {
+    const ipNum = getIPbase10(IPv4);  // Convierte la IP a formato numérico
+    const mascara = ((1 << bitsMascara) - 1) << (32 - bitsMascara);  // Calcula la máscara de red en formato numérico
+    const netID = ipNum & mascara;  // Obtiene el NetID
+    const hostBits = 32 - bitsMascara;  // Calcula la cantidad de bits disponibles para hosts
+    const ipMin = netID + 1;  // La IP mínima es el NetID + 1
+    const ipMax = netID + (1 << hostBits) - 2;  // La IP máxima es el NetID + el rango de hosts disponibles - 2
+    const ipMinStr = [
+        (ipMin >>> 24) & 255,
+        (ipMin >>> 16) & 255,
+        (ipMin >>> 8) & 255,
+        ipMin & 255
+    ].join('.');  // Convierte la IP mínima a formato IPv4
+    const ipMaxStr = [
+        (ipMax >>> 24) & 255,
+        (ipMax >>> 16) & 255,
+        (ipMax >>> 8) & 255,
+        ipMax & 255
+    ].join('.');  // Convierte la IP máxima a formato IPv4
+    return [ipMinStr, ipMaxStr];  // Devuelve el rango de IP disponibles
+}
+
+// Función para calcular la dirección de broadcast
+// La dirección de broadcast se obtiene invirtiendo los bits de la máscara de red
+function getIPbroadcast(IPv4, bitsMascara) {
+    const ipNum = getIPbase10(IPv4);  // Convierte la IP a formato numérico
+    const mascara = ((1 << bitsMascara) - 1) << (32 - bitsMascara);  // Calcula la máscara de red en formato numérico
+    const broadcast = ipNum | ~mascara >>> 0;  
+    
+    return [
+        (broadcast >>> 24) & 255,
+        (broadcast >>> 16) & 255,
+        (broadcast >>> 8) & 255,
+        broadcast & 255
+    ].join('.');
+}
+
+// Función para calcular la máscara de subred en formato octal
+// Recibe el número de bits de la máscara y la convierte a formato IPv4
+function getMascaraOctal(bitsMascara) {
+    const mascara = ((1 << bitsMascara) - 1) << (32 - bitsMascara);  
+    // Convierte la máscara a formato IPv4
+    return [
+        (mascara >>> 24) & 255,
+        (mascara >>> 16) & 255,
+        (mascara >>> 8) & 255,
+        mascara & 255
+    ].join('.');
+}
+
+// Función principal para calcular todos los valores relacionados con la IP
+// Llama a las funciones anteriores para obtener el IP base 10, NetID, clase, rango de IP, dirección de broadcast, y máscara octal
+function calcular(formulario) {
+    var IPv4 = formulario.IPv4.value;  // Obtiene la IP ingresada en el formulario
+    var bitsMascara = parseInt(formulario.bitsMascara.value);  // Obtiene el número de bits de la máscara
+
+    // Verifica si los campos necesarios están vacíos
+    if ((IPv4 == "") || (bitsMascara == "")) {
+        alert("Falta un campo");
+        return false;
+    }
+
+    // Llama a las funciones para calcular los resultados y los muestra en los campos correspondientes
+    formulario.IPbase10.value = getIPbase10(IPv4);
+    formulario.NetID.value = getNetID(IPv4, bitsMascara);
+    formulario.Clase.value = getClase(IPv4);
+    formulario.IPmin.value = getRangoIP(IPv4, bitsMascara)[0];
+    formulario.IPmax.value = getRangoIP(IPv4, bitsMascara)[1];
+    formulario.IPbroadcast.value = getIPbroadcast(IPv4, bitsMascara);
+    formulario.MascaraOctal.value = getMascaraOctal(bitsMascara);
+}
+
+
+function integrantes() {
+    document.forms[0].integrante1.value = "Joyce Vivar Guzmán, joyce.vivar@alumnos.uv.cl";  
+}
+</script>
+</head>
+
+<body onLoad="integrantes()">
+
+<h1>Redes de Computadores</h1>
+<h2>C&aacute;lculo de Nombre de Red, Rango de IP, Direcci&oacute;n de Broadcast </h2>
+
+<form action="#">
+    <b>IP versi&oacute;n 4 : </b> <input name="IPv4" type="text" value="172.16.84.34" onClick="this.select()">
+    <br><b>Nro de bits de M&aacute;scara:</b> <input name="bitsMascara" type="text" size="2" maxlength="2" value="18" onClick="this.select()">
+    <br><input value="Calcular" type="button" onClick="calcular(this.form);">
+
+    <hr>
+    <b>N&uacute;mero IP (base 10): </b><input name="IPbase10" type="text" size="20" disabled>
+    <hr>
+    <b>Nombre de Red: </b><input name="NetID" type="text" size="15" disabled>
+    <hr>
+    <b>Clase: </b><input name="Clase" type="text" size="15" disabled>
+    <hr>
+    <b>Rango de IP disponibles:</b>
+    <ul>
+        <li>IP m&iacute;nima<input name="IPmin" type="text" size="15" disabled>
+        <li>IP m&aacute;xima<input name="IPmax" type="text" size="15" disabled>
+    </ul>
+    <hr>
+    <b>Direcci&oacute;n de BroadCast:</b> <input name="IPbroadcast" type="text" size="15" disabled>
+    <hr>
+    <b>M&aacute;scara de Red:</b> <input name="MascaraOctal" type="text" size="15" disabled>
+    <hr>
+    <b>Integrante</b> 
+    <br><input name="integrante1" type="text" size="100" disabled> 
+</form>
+
+</body>
+</html>
